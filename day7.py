@@ -10,7 +10,7 @@ def parse_equation(line: str) -> Optional[Tuple[int, List[str]]]:
         test_value = int(test_value_str.strip())
         numbers = [int(n) for n in numbers_str.strip().split()]
         if any(n <= 0 for n in numbers):
-            raise ValueError('All numbers must be positive integers')
+            raise ValueError("All numbers must be positive integers")
         return test_value, numbers
     except ValueError as e:
         print(f"Error parsing line '{line}': {e}")
@@ -48,6 +48,7 @@ def calculate_total_calibration(equations: List[str]) -> Tuple[int, List[int]]:
             total += test_value
             valid_equations.append(test_value)
     return total, valid_equations
+
 
 def main():
     input_path = "inputs/day7_input.txt"

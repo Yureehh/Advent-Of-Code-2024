@@ -26,9 +26,6 @@ def count_positions_visited(grid):
                 start_direction = direction_map[grid[r][c]]
                 # Make this cell walkable
                 grid[r][c] = "."
-                print(
-                    f"Found start at ({start_row}, {start_col}) with direction {grid[start_row][start_col]}"
-                )
                 break
         if start_row is not None:
             break
@@ -42,7 +39,6 @@ def count_positions_visited(grid):
     directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
     try:
         dir_index = directions.index(start_direction)
-        print(f"Start direction index: {dir_index}")
     except ValueError:
         # If start_direction is not in directions, default to North
         dir_index = 0
@@ -66,9 +62,6 @@ def count_positions_visited(grid):
 
         if forward_status == "out_of_bounds":
             # Guard leaves grid
-            print(
-                f"Guard leaves the grid from ({current_row}, {current_col}) moving ({dr}, {dc})"
-            )
             break
 
         steps_turned = 0
@@ -97,86 +90,61 @@ def count_positions_visited(grid):
     return len(visited)
 
 
-def run_with_timeout(func, args=(), kwargs=None, timeout=5):
-    """
-    Run a function with a timeout. If it doesn't complete within 'timeout' seconds, raise TimeoutError.
-
-    This implementation uses ProcessPoolExecutor for cross-platform compatibility.
-    """
-    if kwargs is None:
-        kwargs = {}
-
-    # Make a deep copy of the grid to avoid shared state issues
-    args = list(args)
-    for i, arg in enumerate(args):
-        if isinstance(arg, list):
-            args[i] = copy.deepcopy(arg)
-    if "grid" in kwargs:
-        kwargs["grid"] = copy.deepcopy(kwargs["grid"])
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(func, *args, **kwargs)
-        try:
-            return future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            raise TimeoutError("Function call timed out")
-
-
 def count_loop_positions(grid):
-    rows = len(grid)
-    cols = len(grid[0])
+    rows, cols = len(grid), len(grid[0])
+    directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+    dir_chars = "^>v<"
 
-    direction_map = {"^": (-1, 0), "v": (1, 0), "<": (0, -1), ">": (0, 1)}
-    start_row, start_col = None, None
-    start_direction = None
+    # Find start position and direction
+    start_pos = next(
+        (r, c) for r in range(rows) for c in range(cols) if grid[r][c] in "^v<>"
+    )
+    start_dir = dir_chars.index(grid[start_pos[0]][start_pos[1]])
 
-    # Find start
-    for r in range(rows):
-        for c in range(cols):
-            if grid[r][c] in direction_map:
-                start_row, start_col = r, c
-                start_direction = direction_map[grid[r][c]]
-                print(
-                    f"Start found at ({start_row}, {start_col}) with direction {grid[start_row][start_col]}"
-                )
-                break
-        if start_row is not None:
+    # Initialize variables
+    pos = start_pos
+    dir_index = start_dir
+    visited = {}
+    step = 0
+
+    # Simulate guard's movement
+    while 0 <= pos[0] < rows and 0 <= pos[1] < cols:
+        if pos in visited:
             break
+        visited[pos] = (step, dir_index)
 
-    if start_row is None or start_direction is None:
-        print("No starting position found in the grid.")
-        return 0
+        # Check forward
+        next_pos = (
+            pos[0] + directions[dir_index][0],
+            pos[1] + directions[dir_index][1],
+        )
+        if (
+            next_pos[0] < 0
+            or next_pos[0] >= rows
+            or next_pos[1] < 0
+            or next_pos[1] >= cols
+            or grid[next_pos[0]][next_pos[1]] == "#"
+        ):
+            dir_index = (dir_index + 1) % 4
+        else:
+            pos = next_pos
 
-    loop_count = 0
-    total_cells = sum(row.count(".") for row in grid)
-    processed_cells = 0
+        step += 1
 
-    # For each '.' cell except the start, place '#' and run count_positions_visited with a timeout
+    # Find loop-causing positions
+    loop_positions = set()
     for r in range(rows):
         for c in range(cols):
-            if (r, c) == (start_row, start_col):
-                continue
-            if grid[r][c] == ".":
-                # Make a copy of the grid to modify
-                grid_copy = copy.deepcopy(grid)
-                # Temporarily place obstacle
-                grid_copy[r][c] = "#"
-                try:
-                    # Run count_positions_visited with a timeout
-                    run_with_timeout(
-                        count_positions_visited, args=(grid_copy,), timeout=5
-                    )
-                    print(f"Processed cell ({r}, {c}) without loop.")
-                except TimeoutError:
-                    # Timeout means infinite loop detected
-                    loop_count += 1
-                    print(f"Detected loop-causing obstruction at ({r}, {c}).")
-                except Exception as e:
-                    # Handle other exceptions if necessary
-                    print(f"Error processing cell ({r}, {c}): {e}")
-                processed_cells += 1
-                print(f"Progress: {processed_cells}/{total_cells} cells processed.")
-    return loop_count
+            if grid[r][c] == "." and (r, c) != start_pos:
+                for d in range(4):
+                    next_pos = (r + directions[d][0], c + directions[d][1])
+                    if next_pos in visited:
+                        prev_step, prev_dir = visited[next_pos]
+                        if (prev_dir + 1) % 4 == d:
+                            loop_positions.add((r, c))
+                            break
+
+    return len(loop_positions)
 
 
 def main():
