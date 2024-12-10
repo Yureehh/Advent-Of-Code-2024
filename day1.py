@@ -1,5 +1,5 @@
 # Input path
-input_path = "inputs/day1_input.txt"
+input_path = "inputs/input_day1.txt"
 
 # Read and process input in one step
 list1, list2 = [], []

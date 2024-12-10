@@ -1,51 +1,58 @@
 import concurrent.futures
 import copy
 
-# Input path
-input_path = "inputs/day6_input.txt"
-
+input_path = "inputs/input_day6.txt"
 
 def load_grid(input_path):
     with open(input_path, "r") as file:
         return [list(line.rstrip("\n")) for line in file.readlines()]
 
 
-def count_positions_visited(grid):
+def find_start_and_direction(grid):
+    """Find the guard's starting position and direction."""
+    directions = {"^": (-1, 0), "v": (1, 0), "<": (0, -1), ">": (0, 1)}
+    rows = len(grid)
+    cols = len(grid[0])
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] in directions:
+                start_direction = directions[grid[r][c]]
+                return r, c, start_direction
+    return None, None, None
+
+
+def simulate_guard(grid):
+    """
+    Simulate the guard's movement and return:
+    - A dictionary with:
+      'stuck': bool (True if guard loops/stuck, False otherwise)
+      'visited_count': number of distinct positions visited
+    """
     rows = len(grid)
     cols = len(grid[0])
 
-    direction_map = {"^": (-1, 0), "v": (1, 0), "<": (0, -1), ">": (0, 1)}
-    start_row, start_col = None, None
-    start_direction = None
+    start_row, start_col, start_direction = find_start_and_direction(grid)
+    if start_row is None:
+        # No start found
+        return {'stuck': False, 'visited_count': 0}
 
-    # Find start
-    for r in range(rows):
-        for c in range(cols):
-            if grid[r][c] in direction_map:
-                start_row, start_col = r, c
-                start_direction = direction_map[grid[r][c]]
-                # Make this cell walkable
-                grid[r][c] = "."
-                break
-        if start_row is not None:
-            break
-
-    # Check if start was found
-    if start_row is None or start_col is None:
-        # No starting position found; possibly blocked
-        print("Warning: No starting position found in the grid.")
-        return 0
+    # Make starting cell walkable
+    grid[start_row][start_col] = "."
 
     directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
-    try:
+    if start_direction in directions:
         dir_index = directions.index(start_direction)
-    except ValueError:
-        # If start_direction is not in directions, default to North
-        dir_index = 0
-        print("Start direction not found in directions. Defaulting to North.")
+    else:
+        dir_index = 0  # Default to north if not found
 
-    visited = set()
-    visited.add((start_row, start_col))
+    visited_positions = set()  # for visited cells
+    visited_positions.add((start_row, start_col))
+
+    # Track states: (row, col, dir_index)
+    # If we hit the same state twice, we're in a loop.
+    visited_states = set()
+    visited_states.add((start_row, start_col, dir_index))
+
     current_row, current_col = start_row, start_col
 
     def is_forward_status(r, c, dr, dc):
@@ -62,89 +69,89 @@ def count_positions_visited(grid):
 
         if forward_status == "out_of_bounds":
             # Guard leaves grid
-            break
+            return {'stuck': False, 'visited_count': len(visited_positions)}
 
         steps_turned = 0
+        # Turn right while blocked
         while forward_status == "blocked":
             dir_index = (dir_index + 1) % 4
             dr, dc = directions[dir_index]
             forward_status = is_forward_status(current_row, current_col, dr, dc)
             steps_turned += 1
             if steps_turned == 4:
-                # Stuck in place
-                print(f"Guard is stuck at ({current_row}, {current_col})")
-                return len(visited)
+                # Stuck in place (no direction to go)
+                return {'stuck': True, 'visited_count': len(visited_positions)}
 
         if forward_status == "out_of_bounds":
-            print(
-                f"Guard leaves the grid from ({current_row}, {current_col}) moving ({dr}, {dc})"
-            )
-            break
+            # Guard leaves grid
+            return {'stuck': False, 'visited_count': len(visited_positions)}
 
         # Move forward
         current_row += dr
         current_col += dc
-        visited.add((current_row, current_col))
-        # print(f"Guard moved to ({current_row}, {current_col})")
+        visited_positions.add((current_row, current_col))
 
-    return len(visited)
+        # Check for looping state
+        current_state = (current_row, current_col, dir_index)
+        if current_state in visited_states:
+            # We've been here facing the same direction before -> loop
+            return {'stuck': True, 'visited_count': len(visited_positions)}
+        visited_states.add(current_state)
+
+def count_positions_visited(grid):
+    """Part One: How many distinct positions will the guard visit before leaving?"""
+    sim_result = simulate_guard(copy.deepcopy(grid))
+    return sim_result['visited_count']
 
 
-def count_loop_positions(grid):
-    rows, cols = len(grid), len(grid[0])
-    directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
-    dir_chars = "^>v<"
-
-    # Find start position and direction
-    start_pos = next(
-        (r, c) for r in range(rows) for c in range(cols) if grid[r][c] in "^v<>"
-    )
-    start_dir = dir_chars.index(grid[start_pos[0]][start_pos[1]])
-
-    # Initialize variables
-    pos = start_pos
-    dir_index = start_dir
-    visited = {}
-    step = 0
-
-    # Simulate guard's movement
-    while 0 <= pos[0] < rows and 0 <= pos[1] < cols:
-        if pos in visited:
-            break
-        visited[pos] = (step, dir_index)
-
-        # Check forward
-        next_pos = (
-            pos[0] + directions[dir_index][0],
-            pos[1] + directions[dir_index][1],
-        )
-        if (
-            next_pos[0] < 0
-            or next_pos[0] >= rows
-            or next_pos[1] < 0
-            or next_pos[1] >= cols
-            or grid[next_pos[0]][next_pos[1]] == "#"
-        ):
-            dir_index = (dir_index + 1) % 4
-        else:
-            pos = next_pos
-
-        step += 1
-
-    # Find loop-causing positions
-    loop_positions = set()
+def find_valid_obstruction_positions(grid):
+    """
+    Find all possible positions to place a new obstruction:
+    - It cannot be placed on the guard's starting position.
+    - It must be placed on a '.' cell.
+    """
+    rows = len(grid)
+    cols = len(grid[0])
+    start_row, start_col, _ = find_start_and_direction(grid)
+    valid_positions = []
     for r in range(rows):
         for c in range(cols):
-            if grid[r][c] == "." and (r, c) != start_pos:
-                for d in range(4):
-                    next_pos = (r + directions[d][0], c + directions[d][1])
-                    if next_pos in visited:
-                        prev_step, prev_dir = visited[next_pos]
-                        if (prev_dir + 1) % 4 == d:
-                            loop_positions.add((r, c))
-                            break
+            # Must be a free cell and not the start
+            if (r, c) != (start_row, start_col) and grid[r][c] == ".":
+                valid_positions.append((r, c))
+    return valid_positions
 
-    return len(loop_positions)
+
+def does_obstruction_cause_loop(grid, r, c):
+    """
+    Place a single obstruction at (r, c) and check if guard gets stuck in a loop.
+    Return True if placing obstruction causes a loop, False otherwise.
+    """
+    test_grid = copy.deepcopy(grid)
+    test_grid[r][c] = "#"
+    sim_result = simulate_guard(test_grid)
+    return sim_result['stuck']
+
+
+def count_loop_positions(original_grid):
+    """
+    Part Two:
+    Count how many distinct positions you could place a single new obstruction
+    such that the guard will get stuck in a loop.
+    """
+    valid_positions = find_valid_obstruction_positions(original_grid)
+    loop_count = 0
+
+    # Parallelize to speed up if large grids
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(does_obstruction_cause_loop, original_grid, r, c)
+                   for r, c in valid_positions]
+        for future in concurrent.futures.as_completed(futures):
+            print("Starting future number", loop_count)
+            if future.result():
+                loop_count += 1
+
+    return loop_count
 
 
 def main():

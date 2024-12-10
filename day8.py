@@ -88,7 +88,7 @@ def calculate_antinodes2(grid, antennas):
 
 
 def main():
-    file_path = "inputs/day8_input.txt"
+    file_path = "inputs/input_day8.txt"
     grid = load_grid(file_path)
 
     # Find antennas grouped by frequency

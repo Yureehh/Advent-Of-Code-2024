@@ -1,5 +1,5 @@
 # Input path
-input_path = "inputs/day2_input.txt"
+input_path = "inputs/input_day2.txt"
 
 max_difference = 3
 

@@ -1,5 +1,5 @@
 # Input path
-input_path = "inputs/day4_input.txt"
+input_path = "inputs/input_day4.txt"
 
 
 def is_valid_position(x, y, rows, cols):

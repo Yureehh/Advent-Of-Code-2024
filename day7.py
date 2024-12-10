@@ -51,7 +51,7 @@ def calculate_total_calibration(equations: List[str]) -> Tuple[int, List[int]]:
 
 
 def main():
-    input_path = "inputs/day7_input.txt"
+    input_path = "inputs/input_day7.txt"
 
     try:
         with open(input_path, "r") as file:

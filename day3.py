@@ -1,7 +1,7 @@
 import re
 
 # Input path
-input_path = "inputs/day3_input.txt"
+input_path = "inputs/input_day3.txt"
 
 
 # Function to calculate the total sum from 'mul' operations
