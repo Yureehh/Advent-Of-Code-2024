@@ -147,7 +147,6 @@ def count_loop_positions(original_grid):
         futures = [executor.submit(does_obstruction_cause_loop, original_grid, r, c)
                    for r, c in valid_positions]
         for future in concurrent.futures.as_completed(futures):
-            print("Starting future number", loop_count)
             if future.result():
                 loop_count += 1
 
