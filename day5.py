@@ -1,5 +1,6 @@
 # Input path
-input_path = 'inputs/day5_input.txt'
+input_path = "inputs/day5_input.txt"
+
 
 def load_rules_and_updates(input_path):
     """
@@ -8,14 +9,15 @@ def load_rules_and_updates(input_path):
     :param input_path: Path to the input file.
     :return: A tuple containing two lists: rules and updates.
     """
-    with open(input_path, 'r') as file:
+    with open(input_path, "r") as file:
         lines = file.read().splitlines()
 
-    separator_index = lines.index('') if '' in lines else len(lines)
+    separator_index = lines.index("") if "" in lines else len(lines)
     rules = lines[:separator_index]
-    updates = lines[separator_index + 1:]
+    updates = lines[separator_index + 1 :]
 
     return rules, updates
+
 
 def is_safe_rule(number, right_number, rule_set):
     """
@@ -27,6 +29,7 @@ def is_safe_rule(number, right_number, rule_set):
     :return: True if the rule is safe, False otherwise.
     """
     return f"{right_number}|{number}" not in rule_set
+
 
 def check_part1(updates, rules):
     """
@@ -45,7 +48,7 @@ def check_part1(updates, rules):
         is_update_safe = all(
             is_safe_rule(number, right_number, rule_set)
             for i, number in enumerate(update_values)
-            for right_number in update_values[i + 1:]
+            for right_number in update_values[i + 1 :]
         )
 
         if is_update_safe:
@@ -55,6 +58,7 @@ def check_part1(updates, rules):
             wrong_updates.append(update)
 
     return total, wrong_updates
+
 
 # Part 2
 def adjust_updates(rules, wrong_updates):
@@ -97,8 +101,9 @@ def adjust_updates(rules, wrong_updates):
 
     return adjusted_updates, total
 
+
 # Main execution
-if __name__ == '__main__':
+if __name__ == "__main__":
     rules, updates = load_rules_and_updates(input_path)
     total, wrong_updates = check_part1(updates, rules)
     print(f"Part 1: The total value of valid updates is {total}.")

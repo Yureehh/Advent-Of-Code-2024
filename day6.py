@@ -3,6 +3,7 @@ import copy
 
 input_path = "inputs/input_day6.txt"
 
+
 def load_grid(input_path):
     with open(input_path, "r") as file:
         return [list(line.rstrip("\n")) for line in file.readlines()]
@@ -34,7 +35,7 @@ def simulate_guard(grid):
     start_row, start_col, start_direction = find_start_and_direction(grid)
     if start_row is None:
         # No start found
-        return {'stuck': False, 'visited_count': 0}
+        return {"stuck": False, "visited_count": 0}
 
     # Make starting cell walkable
     grid[start_row][start_col] = "."
@@ -69,7 +70,7 @@ def simulate_guard(grid):
 
         if forward_status == "out_of_bounds":
             # Guard leaves grid
-            return {'stuck': False, 'visited_count': len(visited_positions)}
+            return {"stuck": False, "visited_count": len(visited_positions)}
 
         steps_turned = 0
         # Turn right while blocked
@@ -80,11 +81,11 @@ def simulate_guard(grid):
             steps_turned += 1
             if steps_turned == 4:
                 # Stuck in place (no direction to go)
-                return {'stuck': True, 'visited_count': len(visited_positions)}
+                return {"stuck": True, "visited_count": len(visited_positions)}
 
         if forward_status == "out_of_bounds":
             # Guard leaves grid
-            return {'stuck': False, 'visited_count': len(visited_positions)}
+            return {"stuck": False, "visited_count": len(visited_positions)}
 
         # Move forward
         current_row += dr
@@ -95,13 +96,14 @@ def simulate_guard(grid):
         current_state = (current_row, current_col, dir_index)
         if current_state in visited_states:
             # We've been here facing the same direction before -> loop
-            return {'stuck': True, 'visited_count': len(visited_positions)}
+            return {"stuck": True, "visited_count": len(visited_positions)}
         visited_states.add(current_state)
+
 
 def count_positions_visited(grid):
     """Part One: How many distinct positions will the guard visit before leaving?"""
     sim_result = simulate_guard(copy.deepcopy(grid))
-    return sim_result['visited_count']
+    return sim_result["visited_count"]
 
 
 def find_valid_obstruction_positions(grid):
@@ -130,7 +132,7 @@ def does_obstruction_cause_loop(grid, r, c):
     test_grid = copy.deepcopy(grid)
     test_grid[r][c] = "#"
     sim_result = simulate_guard(test_grid)
-    return sim_result['stuck']
+    return sim_result["stuck"]
 
 
 def count_loop_positions(original_grid):
@@ -144,8 +146,10 @@ def count_loop_positions(original_grid):
 
     # Parallelize to speed up if large grids
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(does_obstruction_cause_loop, original_grid, r, c)
-                   for r, c in valid_positions]
+        futures = [
+            executor.submit(does_obstruction_cause_loop, original_grid, r, c)
+            for r, c in valid_positions
+        ]
         for future in concurrent.futures.as_completed(futures):
             if future.result():
                 loop_count += 1
