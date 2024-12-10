@@ -1,7 +1,8 @@
 # Input path
-input_path = 'inputs/day2_input.txt'
+input_path = "inputs/input_day2.txt"
 
 max_difference = 3
+
 
 # Function to check if a level is safe (ascending or descending with constraints)
 def is_safe_level(level):
@@ -17,13 +18,15 @@ def is_safe_level(level):
             return False  # Early exit if neither condition is met
     return True
 
+
 # Function to check if a level is safe with one element removed
 def is_safe_level_with_dampener(level):
     for i in range(len(level)):
-        new_level = level[:i] + level[i + 1:]  # Remove one element
+        new_level = level[:i] + level[i + 1 :]  # Remove one element
         if is_safe_level(new_level):
             return True
     return False
+
 
 # Read levels into a list for reusability
 with open(input_path) as f:
@@ -33,7 +36,9 @@ with open(input_path) as f:
 
 # Calculate safe levels
 safe_levels_count = sum(is_safe_level(level) for level in levels)
-safe_levels_count_with_dampener = sum(is_safe_level_with_dampener(level) for level in levels)
+safe_levels_count_with_dampener = sum(
+    is_safe_level_with_dampener(level) for level in levels
+)
 
 print(f"Safe Levels Count: {safe_levels_count}")
 print(f"Safe Levels Count with Dampener: {safe_levels_count_with_dampener}")
