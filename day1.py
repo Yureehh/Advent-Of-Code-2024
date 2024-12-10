@@ -1,9 +1,9 @@
 # Input path
-input_path = 'inputs/day1_input.txt'
+input_path = "inputs/day1_input.txt"
 
 # Read and process input in one step
 list1, list2 = [], []
-with open(input_path, 'r') as file:
+with open(input_path, "r") as file:
     data = [line.split() for line in file]
     list1 = sorted(int(parts[0].strip()) for parts in data)
     list2 = sorted(int(parts[1].strip()) for parts in data)
