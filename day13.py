@@ -9,84 +9,88 @@ def parse_input(file_path):
     with open(file_path, "r") as file:
         lines = [line.strip() for line in file if line.strip()]  # Remove empty lines
         for i in range(0, len(lines), 3):
-            # Parse Button A
-            button_a_line = lines[i]
-            a_x = int(button_a_line.split("X+")[1].split(",")[0])
-            a_y = int(button_a_line.split("Y+")[1])
-
-            # Parse Button B
-            button_b_line = lines[i + 1]
-            b_x = int(button_b_line.split("X+")[1].split(",")[0])
-            b_y = int(button_b_line.split("Y+")[1])
-
-            # Parse Prize
-            prize_line = lines[i + 2]
-            prize_x = int(prize_line.split("X=")[1].split(",")[0])
-            prize_y = int(prize_line.split("Y=")[1])
-
-            machines.append(((a_x, a_y), (b_x, b_y), (prize_x, prize_y)))
+            machines.append(parse_machine(lines[i : i + 3]))
     return machines
 
 
-def find_min_tokens(a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses=100):
+def parse_machine(lines):
     """
-    Finds the minimum number of tokens required to reach the prize position.
-    Returns a tuple (x, y) representing the number of button A and B presses.
-    If no solution exists within the given press limit, returns None.
+    Parses the lines for a single machine and extracts button configurations and prize location.
+    """
+
+    def extract_values(line, key_x, key_y):
+        x = int(line.split(key_x)[1].split(",")[0])
+        y = int(line.split(key_y)[1])
+        return x, y
+
+    button_a = extract_values(lines[0], "X+", "Y+")
+    button_b = extract_values(lines[1], "X+", "Y+")
+    prize = extract_values(lines[2], "X=", "Y=")
+    return button_a, button_b, prize
+
+
+def solve_linear_diophantine(a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses=None):
+    """
+    Solves the linear Diophantine equation for the given button configurations and prize location.
+    Returns a tuple (x, y) of button presses or None if no solution exists.
     """
     det = a_x * b_y - a_y * b_x
-    if det == 0:
-        # Check if the system is consistent
-        if a_x * prize_y != a_y * prize_x or b_x * prize_y != b_y * prize_x:
-            # No solution
-            return None
-        else:
-            # Infinite solutions: Find the one with minimal tokens within press limit
-            min_tokens = None
-            min_solution = None
-            for x in range(0, max_presses + 1):
-                if b_x == 0:
-                    if a_x * x != prize_x:
-                        continue
-                    y = 0
-                else:
-                    if (prize_x - a_x * x) % b_x != 0:
-                        continue
-                    y = (prize_x - a_x * x) // b_x
-                if y < 0:
-                    continue
-                # Verify Y-axis alignment
-                if a_y * x + b_y * y != prize_y:
-                    continue
-                tokens = 3 * x + y
-                if min_tokens is None or tokens < min_tokens:
-                    min_tokens = tokens
-                    min_solution = (x, y)
-            return min_solution
-    else:
-        # Unique solution exists
-        numerator_y = a_x * prize_y - a_y * prize_x
-        numerator_x = prize_x * b_y - prize_y * b_x
-        if det < 0:
-            numerator_y = -numerator_y
-            numerator_x = -numerator_x
-            det = -det
-        if numerator_y % det != 0 or numerator_x % det != 0:
-            return None
-        y = numerator_y // det
-        x = numerator_x // det
-        if x < 0 or y < 0:
-            return None
-        # Verify both equations
-        if a_x * x + b_x * y != prize_x or a_y * x + b_y * y != prize_y:
-            return None
-        return (x, y)
+
+    if det == 0:  # Check for dependent system
+        return solve_dependent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses)
+
+    return solve_independent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, det)
+
+
+def solve_dependent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses):
+    """
+    Handles the case where the system is dependent (det == 0).
+    """
+    if not (a_x * prize_y == a_y * prize_x and b_x * prize_y == b_y * prize_x):
+        return None  # No solution exists
+
+    min_tokens, solution = None, None
+
+    for x in range(0, max_presses + 1 if max_presses else 101):
+        y = compute_y_dependent(a_x, b_x, prize_x, x)
+        if y is not None and a_y * x + b_y * y == prize_y:
+            tokens = 3 * x + y
+            if min_tokens is None or tokens < min_tokens:
+                min_tokens, solution = tokens, (x, y)
+    return solution
+
+
+def compute_y_dependent(a_x, b_x, prize_x, x):
+    """
+    Computes the value of y for the dependent system.
+    """
+    if b_x == 0:
+        return 0 if a_x * x == prize_x else None
+    if (prize_x - a_x * x) % b_x != 0:
+        return None
+    return (prize_x - a_x * x) // b_x
+
+
+def solve_independent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, det):
+    """
+    Handles the case where the system is independent (det != 0).
+    """
+    numerator_y = a_x * prize_y - a_y * prize_x
+    numerator_x = prize_x * b_y - prize_y * b_x
+
+    if det < 0:
+        numerator_y, numerator_x, det = -numerator_y, -numerator_x, -det
+
+    if numerator_y % det != 0 or numerator_x % det != 0:
+        return None
+
+    x, y = numerator_x // det, numerator_y // det
+    return (x, y) if x >= 0 and y >= 0 else None
 
 
 def solve_claw_machine(machines, adjust_prize=False):
     """
-    Solves the claw machine problem to find all possible solutions for each machine.
-    Returns the total number of prizes won and the total tokens spent.
+    Solves the claw machine problem and returns prizes won, tokens spent, and solutions for all machines.
     """
     total_prizes_won = 0
     total_tokens_spent = 0
@@ -101,68 +105,15 @@ def solve_claw_machine(machines, adjust_prize=False):
             prize_x += 10**13
             prize_y += 10**13
 
-        # For Part 1, limit button presses to 100
-        # For Part 2, increase the limit as necessary or handle unique solutions
-        if not adjust_prize:
-            solution = find_min_tokens(
-                a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses=100
-            )
-        else:
-            # For Part 2, handle without press limit
-            # Since find_min_tokens with a very high max_presses is inefficient,
-            # we'll solve it analytically if possible
-            det = a_x * b_y - a_y * b_x
-            if det == 0:
-                # Check consistency
-                if a_x * prize_y != a_y * prize_x or b_x * prize_y != b_y * prize_x:
-                    solution = None
-                else:
-                    # Find minimal tokens: iterate x to find y >=0
-                    # To handle large numbers, find y = (prize_x - a_x * x) / b_x >=0 and integer
-                    # Find x such that (prize_x - a_x * x) is divisible by b_x
-                    # Minimal tokens: 3x + y
-                    # To minimize 3x + y, prefer larger y (smaller x)
-                    # Thus, find the smallest x possible
-                    x = 0
-                    while True:
-                        if a_x * x > prize_x:
-                            break
-                        if (prize_x - a_x * x) % b_x == 0:
-                            y = (prize_x - a_x * x) // b_x
-                            if y < 0:
-                                x += 1
-                                continue
-                            # Verify Y-axis
-                            if a_y * x + b_y * y != prize_y:
-                                x += 1
-                                continue
-                            tokens = 3 * x + y
-                            solution = (x, y)
-                            break
-                        x += 1
-                    else:
-                        solution = None
-            else:
-                # det !=0, unique solution
-                numerator_y = a_x * prize_y - a_y * prize_x
-                numerator_x = prize_x * b_y - prize_y * b_x
-                if det < 0:
-                    numerator_y = -numerator_y
-                    numerator_x = -numerator_x
-                    det = -det
-                if numerator_y % det != 0 or numerator_x % det != 0:
-                    solution = None
-                else:
-                    y = numerator_y // det
-                    x = numerator_x // det
-                    if x < 0 or y < 0:
-                        solution = None
-                    else:
-                        # Verify both equations
-                        if a_x * x + b_x * y != prize_x or a_y * x + b_y * y != prize_y:
-                            solution = None
-                        else:
-                            solution = (x, y)
+        solution = solve_linear_diophantine(
+            a_x,
+            a_y,
+            b_x,
+            b_y,
+            prize_x,
+            prize_y,
+            max_presses=(None if adjust_prize else 100),
+        )
 
         if solution:
             x, y = solution
@@ -192,6 +143,8 @@ if __name__ == "__main__":
     print(f"Part 1 - Minimum Tokens Spent: {tokens_spent_part1}")
 
     # Part 2
-    prizes_won_part2, tokens_spent_part2, solutions_part2 = solve_claw_machine(machines, adjust_prize=True)
+    prizes_won_part2, tokens_spent_part2, solutions_part2 = solve_claw_machine(
+        machines, adjust_prize=True
+    )
     print(f"\nPart 2 - Maximum Prizes Won: {prizes_won_part2}")
     print(f"Part 2 - Minimum Tokens Spent: {tokens_spent_part2}")
