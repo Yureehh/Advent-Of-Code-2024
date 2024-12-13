@@ -1,10 +1,12 @@
 from collections import Counter
 
+
 def load_stones(file_path):
     """Load the stones from the input file."""
     with open(file_path, "r") as file:
         stones = file.read().strip().split()
     return Counter(stones)  # Use Counter to keep track of stone counts
+
 
 def transform_stones(stone_counts):
     """Transform the stones according to the rules, optimized with a Counter."""
@@ -31,6 +33,7 @@ def transform_stones(stone_counts):
 
     return new_counts
 
+
 def main():
     file_path = "inputs/input_day11.txt"
     stone_counts = load_stones(file_path)
@@ -42,6 +45,7 @@ def main():
     # Calculate the total number of stones
     total_stones = sum(stone_counts.values())
     print(total_stones)
+
 
 if __name__ == "__main__":
     main()
