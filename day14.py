@@ -26,7 +26,9 @@ def positions_at_time(robots, width, height, t):
     """
     Compute the final wrapped positions of all robots at a given time t.
     """
-    return [((px + vx * t) % width, (py + vy * t) % height) for (px, py, vx, vy) in robots]
+    return [
+        ((px + vx * t) % width, (py + vy * t) % height) for (px, py, vx, vy) in robots
+    ]
 
 
 def compute_safety_factor_at_time(robots, width, height, t):
@@ -37,7 +39,7 @@ def compute_safety_factor_at_time(robots, width, height, t):
     center_y = height // 2
 
     quadrant_counts = [0, 0, 0, 0]  # top-left, top-right, bottom-left, bottom-right
-    for (fx, fy) in positions_at_time(robots, width, height, t):
+    for fx, fy in positions_at_time(robots, width, height, t):
         if fx == center_x or fy == center_y:
             continue
         if fx < center_x and fy < center_y:
@@ -55,7 +57,9 @@ def compute_safety_factor_at_time(robots, width, height, t):
     return safety_factor
 
 
-def find_minimum_bounding_area_time(robots, width, height, max_time=20000, stable_threshold=50):
+def find_minimum_bounding_area_time(
+    robots, width, height, max_time=20000, stable_threshold=50
+):
     pass
 
 
@@ -77,7 +81,7 @@ def print_pattern(robots, width, height, t):
     grid = [["." for _ in range(grid_width)] for _ in range(grid_height)]
 
     # Place robots
-    for (x, y) in pos:
+    for x, y in pos:
         grid_y = y - min_y
         grid_x = x - min_x
         grid[grid_y][grid_x] = "#"
