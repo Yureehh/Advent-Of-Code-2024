@@ -60,7 +60,7 @@ def main():
         print(f"Input file '{input_path}' not found.")
         return
 
-    total, valid_eqs = calculate_total_calibration(equations)
+    total, _ = calculate_total_calibration(equations)
 
     print("Total Calibration Result:", total)
 

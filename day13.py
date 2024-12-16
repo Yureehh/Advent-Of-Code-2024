@@ -1,6 +1,3 @@
-from math import gcd
-
-
 def parse_input(file_path):
     """
     Parses the input file to extract button configurations and prize locations.
@@ -8,8 +5,9 @@ def parse_input(file_path):
     machines = []
     with open(file_path, "r") as file:
         lines = [line.strip() for line in file if line.strip()]  # Remove empty lines
-        for i in range(0, len(lines), 3):
-            machines.append(parse_machine(lines[i : i + 3]))
+        machines.extend(
+            parse_machine(lines[i : i + 3]) for i in range(0, len(lines), 3)
+        )
     return machines
 
 
@@ -46,12 +44,12 @@ def solve_dependent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, max_presses):
     """
     Handles the case where the system is dependent (det == 0).
     """
-    if not (a_x * prize_y == a_y * prize_x and b_x * prize_y == b_y * prize_x):
+    if a_x * prize_y != a_y * prize_x or b_x * prize_y != b_y * prize_x:
         return None  # No solution exists
 
     min_tokens, solution = None, None
 
-    for x in range(0, max_presses + 1 if max_presses else 101):
+    for x in range(max_presses + 1 if max_presses else 101):
         y = compute_y_dependent(a_x, b_x, prize_x, x)
         if y is not None and a_y * x + b_y * y == prize_y:
             tokens = 3 * x + y
@@ -66,9 +64,7 @@ def compute_y_dependent(a_x, b_x, prize_x, x):
     """
     if b_x == 0:
         return 0 if a_x * x == prize_x else None
-    if (prize_x - a_x * x) % b_x != 0:
-        return None
-    return (prize_x - a_x * x) // b_x
+    return None if (prize_x - a_x * x) % b_x != 0 else (prize_x - a_x * x) // b_x
 
 
 def solve_independent_system(a_x, a_y, b_x, b_y, prize_x, prize_y, det):

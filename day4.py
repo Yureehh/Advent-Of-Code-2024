@@ -1,4 +1,6 @@
 # Input path
+import itertools
+
 input_path = "inputs/input_day4.txt"
 
 
@@ -45,30 +47,26 @@ def count_xmas_occurrences(grid, word="XMAS"):
 # Part 2: Count all occurrences of "X-MAS" pattern
 def count_x_mas_occurrences(grid):
     rows, cols = len(grid), len(grid[0])
-    count = 0
-
-    for row in range(1, rows - 1):  # Center row of the X-MAS
-        for col in range(1, cols - 1):  # Center column of the X-MAS
-            if grid[row][col] == "A":  # Center of the X-MAS
-                # Check for MAS in top-left to bottom-right diagonal
-                if (
-                    is_valid_position(row - 1, col - 1, rows, cols)
-                    and grid[row - 1][col - 1] in ("M", "S")
-                    and is_valid_position(row + 1, col + 1, rows, cols)
-                    and grid[row + 1][col + 1] in ("M", "S")
-                    and grid[row - 1][col - 1] != grid[row + 1][col + 1]
-                ):
-                    # Check for MAS in top-right to bottom-left diagonal
-                    if (
-                        is_valid_position(row - 1, col + 1, rows, cols)
-                        and grid[row - 1][col + 1] in ("M", "S")
-                        and is_valid_position(row + 1, col - 1, rows, cols)
-                        and grid[row + 1][col - 1] in ("M", "S")
-                        and grid[row - 1][col + 1] != grid[row + 1][col - 1]
-                    ):
-                        count += 1
-
-    return count
+    return sum(
+        bool(
+            grid[row][col] == "A"
+            and (
+                is_valid_position(row - 1, col - 1, rows, cols)
+                and grid[row - 1][col - 1] in ("M", "S")
+                and is_valid_position(row + 1, col + 1, rows, cols)
+                and grid[row + 1][col + 1] in ("M", "S")
+                and grid[row - 1][col - 1] != grid[row + 1][col + 1]
+            )
+            and (
+                is_valid_position(row - 1, col + 1, rows, cols)
+                and grid[row - 1][col + 1] in ("M", "S")
+                and is_valid_position(row + 1, col - 1, rows, cols)
+                and grid[row + 1][col - 1] in ("M", "S")
+                and grid[row - 1][col + 1] != grid[row + 1][col - 1]
+            )
+        )
+        for row, col in itertools.product(range(1, rows - 1), range(1, cols - 1))
+    )
 
 
 # Load the grid from the file
