@@ -1,5 +1,5 @@
 # Input path
-input_path = "inputs/day5_input.txt"
+input_path = "inputs/input_day5.txt"
 
 
 def load_rules_and_updates(input_path):
